@@ -22,6 +22,31 @@ export default function App() {
 
   useEffect(() => { cargarTodo(); }, []);
 
+  const verificarDocumentos = async () => {
+
+    try {
+
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/verificar-documentos/",
+        {
+          method: "POST",
+        }
+      );
+
+      const data = await response.json();
+
+      alert(
+        `Correos enviados: ${data.correos_enviados}`
+      );
+
+    } catch (error) {
+
+      console.error(error);
+
+      alert("Error al verificar documentos");
+    }
+  };
+
   const cargarTodo = async () => {
     try {
       const [docs, historial] = await Promise.all([
@@ -30,15 +55,15 @@ export default function App() {
       ]);
       setDocumentosTotales(docs);
       setHistorialReportes(historial);
-      
+
       const mapa = {};
       docs.forEach(doc => {
         const empresa = doc.cliente_nombre || `Cliente #${doc.cliente}`;
         if (!mapa[empresa]) mapa[empresa] = { id_cliente: doc.cliente, nombre: empresa, tramites: {} };
         const tNombre = (doc.tipo_nombre || "").toLowerCase();
-        
+
         const dataDoc = { ...doc, tipo_display: doc.tipo_nombre || "Documento" };
-        
+
         if (tNombre.includes('extintor') || tNombre.includes('bomber')) mapa[empresa].tramites.bomberos = dataDoc;
         else if (tNombre.includes('predial')) mapa[empresa].tramites.predial = dataDoc;
         else if (tNombre.includes('licencia')) mapa[empresa].tramites.licencia = dataDoc;
@@ -58,7 +83,7 @@ export default function App() {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(22);
     doc.text("AVISO DE CONTROL CENTRAL", 14, 25);
-    
+
     doc.setTextColor(40, 40, 40);
     doc.setFontSize(12);
     doc.text(`Empresa: ${reporteData.empresa}`, 14, 50);
@@ -89,23 +114,37 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 p-8 md:p-12 font-sans text-slate-800">
       <header className="flex justify-between items-center mb-12">
         <div>
-            <h1 className="text-5xl font-black uppercase italic tracking-tighter leading-none">Control Central</h1>
-            <p className="text-[10px] font-bold text-slate-400 tracking-[0.3em] mt-2">SISTEMA DE GESTIÓN ITT</p>
+          <h1 className="text-5xl font-black uppercase italic tracking-tighter leading-none">Control Central</h1>
+          <p className="text-[10px] font-bold text-slate-400 tracking-[0.3em] mt-2">SISTEMA DE GESTIÓN ITT</p>
         </div>
-        <button onClick={() => setModalAviso(true)} className="bg-slate-900 text-white px-10 py-5 rounded-full font-black text-xs uppercase shadow-2xl hover:bg-indigo-600 hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3">
-          <span className="text-lg">📝</span> Redactar Reporte
-        </button>
-      </header>
+        <div className="flex gap-4">
 
-      {/* Stats Cards */}
-      <div className="flex flex-wrap gap-6 mb-10">
-        <StatCard title="Empresas" value={datosAgrupados.length} colorClass="border-slate-200" />
-        <StatCard title="Documentos Vigentes" value={countV} colorClass="border-emerald-400" />
-        <StatCard title="Próximos a Vencer" value={countA} colorClass="border-amber-400" />
-        <StatCard title="Vencidos / Rojos" value={countR} colorClass="border-rose-400" />
-      </div>
+          <button
+            onClick={verificarDocumentos}
+            className="bg-amber-500 text-white px-8 py-5 rounded-full font-black text-xs uppercase shadow-2xl hover:bg-amber-600 hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3"
+          >
+            ⚠ Revisar vencimientos
+          </button>
 
-      {/* Gráfico Centrado */}
+          <button
+            onClick={() => setModalAviso(true)}
+            className="bg-slate-900 text-white px-10 py-5 rounded-full font-black text-xs uppercase shadow-2xl hover:bg-indigo-600 hover:-translate-y-1 active:scale-95 transition-all flex items-center gap-3"
+          >
+            <span className="text-lg">📝</span>
+            Redactar Reporte
+          </button>
+        </div>
+    </header>
+
+      {/* Stats Cards */ }
+  <div className="flex flex-wrap gap-6 mb-10">
+    <StatCard title="Empresas" value={datosAgrupados.length} colorClass="border-slate-200" />
+    <StatCard title="Documentos Vigentes" value={countV} colorClass="border-emerald-400" />
+    <StatCard title="Próximos a Vencer" value={countA} colorClass="border-amber-400" />
+    <StatCard title="Vencidos / Rojos" value={countR} colorClass="border-rose-400" />
+  </div>
+
+  {/* Gráfico Centrado */ }
       <div className="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 mb-10 flex flex-col items-center">
         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Estado General de la Documentación</p>
         <div className="h-[280px] w-full max-w-lg">
@@ -131,134 +170,138 @@ export default function App() {
         <span className="absolute right-6 top-1/2 -translate-y-1/2 text-xl grayscale opacity-30">🔍</span>
       </div>
 
-      {/* Tabla Principal */}
-      <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden mb-16">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-50">
-              <th className="py-8 px-12">Empresa</th>
-              <th className="py-8 px-4 text-center">Predial</th>
-              <th className="py-8 px-4 text-center">Licencia</th>
-              <th className="py-8 px-4 text-center">Bomberos</th>
-              <th className="py-8 px-12 text-center">Otros</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-50">
-            {datosAgrupados.filter(e => e.nombre.toLowerCase().includes(busqueda.toLowerCase())).map((e, i) => (
-              <tr key={i} className="hover:bg-indigo-50/30 transition-colors group">
-                <td className="py-10 px-12 font-black text-slate-700 text-base uppercase italic tracking-tight">{e.nombre}</td>
-                {['predial', 'licencia', 'bomberos', 'otro'].map(t => (
-                  <td key={t} className="py-10 px-4 text-center">
-                    {e.tramites[t] ? (
-                      <button 
-                        onClick={() => setModalInfo(e.tramites[t])} 
-                        className={`inline-block px-5 py-2 rounded-full border text-[10px] font-black uppercase transform group-hover:scale-105 transition-all shadow-sm
-                          ${e.tramites[t].semaforo_dinamico === 'verde' ? 'bg-emerald-50 text-emerald-500 border-emerald-100' : 
-                            e.tramites[t].semaforo_dinamico === 'rojo' ? 'bg-rose-50 text-rose-500 border-rose-100' : 
-                            'bg-amber-50 text-amber-500 border-amber-100'}`}
-                      >
-                        {e.tramites[t].fecha_vencimiento || 'VER'}
-                      </button>
-                    ) : <span className="text-slate-100 font-black">---</span>}
-                  </td>
-                ))}
-              </tr>
+  {/* Tabla Principal */ }
+  <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden mb-16">
+    <table className="w-full text-left border-collapse">
+      <thead>
+        <tr className="bg-slate-50/50 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] border-b border-slate-50">
+          <th className="py-8 px-12">Empresa</th>
+          <th className="py-8 px-4 text-center">Predial</th>
+          <th className="py-8 px-4 text-center">Licencia</th>
+          <th className="py-8 px-4 text-center">Bomberos</th>
+          <th className="py-8 px-12 text-center">Otros</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-slate-50">
+        {datosAgrupados.filter(e => e.nombre.toLowerCase().includes(busqueda.toLowerCase())).map((e, i) => (
+          <tr key={i} className="hover:bg-indigo-50/30 transition-colors group">
+            <td className="py-10 px-12 font-black text-slate-700 text-base uppercase italic tracking-tight">{e.nombre}</td>
+            {['predial', 'licencia', 'bomberos', 'otro'].map(t => (
+              <td key={t} className="py-10 px-4 text-center">
+                {e.tramites[t] ? (
+                  <button
+                    onClick={() => setModalInfo(e.tramites[t])}
+                    className={`inline-block px-5 py-2 rounded-full border text-[10px] font-black uppercase transform group-hover:scale-105 transition-all shadow-sm
+                          ${e.tramites[t].semaforo_dinamico === 'verde' ? 'bg-emerald-50 text-emerald-500 border-emerald-100' :
+                        e.tramites[t].semaforo_dinamico === 'rojo' ? 'bg-rose-50 text-rose-500 border-rose-100' :
+                          'bg-amber-50 text-amber-500 border-amber-100'}`}
+                  >
+                    {e.tramites[t].fecha_vencimiento || 'VER'}
+                  </button>
+                ) : <span className="text-slate-100 font-black">---</span>}
+              </td>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
 
-      {/* Historial estilo Tarjetas (Como estaba antes) */}
-      <div className="flex flex-col gap-6 mb-20">
-        <h3 className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-3">
-          <span className="bg-indigo-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm not-italic shadow-lg">H</span>
-          Historial de Documentos
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {historialReportes.map((rep) => (
-            <div key={rep.id_reporte} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in duration-500 group">
-                <div className="flex justify-between items-center mb-4">
-                    <p className="text-[10px] font-black text-indigo-600 uppercase">{new Date(rep.fecha_creacion).toLocaleDateString()}</p>
-                    <span className={`px-3 py-1 rounded-full text-[9px] font-black ${rep.estatus_doc === 'ELIMINADO' ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-500'}`}>
-                        {rep.estatus_doc || 'ACTIVO'}
-                    </span>
-                </div>
-                <p className="text-sm font-black text-slate-700 uppercase italic mb-3 group-hover:text-indigo-600 transition-colors">{rep.cliente_nombre || `Cliente #${rep.cliente}`}</p>
-                <div className="bg-slate-50 p-5 rounded-2xl text-[11px] text-slate-500 italic mb-4">
-                    <p className="font-bold text-slate-600 mb-1">Trámite: {rep.tipo_tramite || 'General'}</p>
-                    "{rep.notas_reporte}"
-                </div>
-                <p className="text-[9px] font-black text-slate-300 uppercase text-right">Por: {rep.usuario_nombre || 'SISTEMA'}</p>
-            </div>
-          ))}
-          {historialReportes.length === 0 && (
-            <div className="col-span-full p-16 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-center animate-in fade-in duration-500">
-              <p className="text-slate-400 font-bold text-xs uppercase italic">Aún no hay actividad registrada en el historial.</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Modal Detalles */}
-      {modalInfo && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-[3rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className={`p-10 text-white font-black uppercase italic text-2xl ${modalInfo.semaforo_dinamico === 'rojo' ? 'bg-rose-500' : modalInfo.semaforo_dinamico === 'verde' ? 'bg-emerald-500' : 'bg-amber-500'}`}>
-                {modalInfo.tipo_display}
-            </div>
-            <div className="p-10 space-y-6">
-              <div className="bg-slate-50 p-8 rounded-[2rem]">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Estado del Trámite</p>
-                <p className="font-black text-xl text-slate-800 italic uppercase">{modalInfo.estado_nombre}</p>
-                <div className="h-[2px] w-12 bg-slate-200 my-4"></div>
-                <p className="font-black text-rose-600 text-sm">Vencimiento: {modalInfo.fecha_vencimiento || '---'}</p>
-              </div>
-              {modalInfo.archivo && (
-                <button 
-                  onClick={() => {
-                    let urlFinal = modalInfo.archivo;
-                    if (!urlFinal.startsWith('http')) {
-                      const base = "http://localhost:8000";
-                      urlFinal = urlFinal.startsWith('/') ? `${base}${urlFinal}` : `${base}/${urlFinal}`;
-                    }
-                    window.open(urlFinal, '_blank');
-                  }} 
-                  className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase shadow-xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-2"
-                >
-                  👁️ Ver Documento PDF
-                </button>
-              )}
-              <button onClick={() => setModalInfo(null)} className="w-full text-slate-300 font-black text-[10px] uppercase tracking-widest hover:text-slate-500 transition-colors">Cerrar Ventana</button>
-            </div>
+  {/* Historial estilo Tarjetas (Como estaba antes) */ }
+  <div className="flex flex-col gap-6 mb-20">
+    <h3 className="text-2xl font-black uppercase italic tracking-tighter flex items-center gap-3">
+      <span className="bg-indigo-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm not-italic shadow-lg">H</span>
+      Historial de Documentos
+    </h3>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {historialReportes.map((rep) => (
+        <div key={rep.id_reporte} className="bg-white p-8 rounded-3xl shadow-sm border border-slate-100 animate-in fade-in duration-500 group">
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-[10px] font-black text-indigo-600 uppercase">{new Date(rep.fecha_creacion).toLocaleDateString()}</p>
+            <span className={`px-3 py-1 rounded-full text-[9px] font-black ${rep.estatus_doc === 'ELIMINADO' ? 'bg-red-50 text-red-500' : 'bg-slate-100 text-slate-500'}`}>
+              {rep.estatus_doc || 'ACTIVO'}
+            </span>
           </div>
-        </div>
-      )}
-
-      {/* Modal Redactar Reporte */}
-      {modalAviso && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
-          <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="p-10 bg-indigo-600 text-white font-black uppercase italic text-2xl">Redactar Reporte</div>
-            <div className="p-10 space-y-6">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Seleccionar Cliente</label>
-                <select className="w-full p-5 bg-slate-50 rounded-[1.5rem] border-none font-bold outline-none text-slate-700" onChange={(e) => setReporteData({...reporteData, empresa: e.target.value})}>
-                    <option value="">Lista de empresas...</option>
-                    {datosAgrupados.map((e, i) => <option key={i} value={e.nombre}>{e.nombre}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Notas e Instrucciones</label>
-                <textarea rows="4" className="w-full p-5 bg-slate-50 rounded-[1.5rem] border-none font-bold outline-none text-slate-700 placeholder:italic" placeholder="Ej: Se requiere renovar el dictamen eléctrico..." onChange={(e) => setReporteData({...reporteData, notas: e.target.value})}></textarea>
-              </div>
-              <div className="flex gap-4 pt-4">
-                <button onClick={generarAvisoPDF} disabled={!reporteData.empresa || !reporteData.notas} className="flex-1 bg-indigo-600 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase shadow-xl disabled:opacity-30 disabled:grayscale transition-all">Generar y Descargar PDF</button>
-                <button onClick={() => setModalAviso(false)} className="px-6 text-slate-300 font-black text-[10px] uppercase tracking-widest">Cancelar</button>
-              </div>
-            </div>
+          <p className="text-sm font-black text-slate-700 uppercase italic mb-3 group-hover:text-indigo-600 transition-colors">{rep.cliente_nombre || `Cliente #${rep.cliente}`}</p>
+          <div className="bg-slate-50 p-5 rounded-2xl text-[11px] text-slate-500 italic mb-4">
+            <p className="font-bold text-slate-600 mb-1">Trámite: {rep.tipo_tramite || 'General'}</p>
+            "{rep.notas_reporte}"
           </div>
+          <p className="text-[9px] font-black text-slate-300 uppercase text-right">Por: {rep.usuario_nombre || 'SISTEMA'}</p>
+        </div>
+      ))}
+      {historialReportes.length === 0 && (
+        <div className="col-span-full p-16 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-center animate-in fade-in duration-500">
+          <p className="text-slate-400 font-bold text-xs uppercase italic">Aún no hay actividad registrada en el historial.</p>
         </div>
       )}
     </div>
+  </div>
+
+  {/* Modal Detalles */ }
+  {
+    modalInfo && (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+        <div className="bg-white rounded-[3rem] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className={`p-10 text-white font-black uppercase italic text-2xl ${modalInfo.semaforo_dinamico === 'rojo' ? 'bg-rose-500' : modalInfo.semaforo_dinamico === 'verde' ? 'bg-emerald-500' : 'bg-amber-500'}`}>
+            {modalInfo.tipo_display}
+          </div>
+          <div className="p-10 space-y-6">
+            <div className="bg-slate-50 p-8 rounded-[2rem]">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Estado del Trámite</p>
+              <p className="font-black text-xl text-slate-800 italic uppercase">{modalInfo.estado_nombre}</p>
+              <div className="h-[2px] w-12 bg-slate-200 my-4"></div>
+              <p className="font-black text-rose-600 text-sm">Vencimiento: {modalInfo.fecha_vencimiento || '---'}</p>
+            </div>
+            {modalInfo.archivo && (
+              <button
+                onClick={() => {
+                  let urlFinal = modalInfo.archivo;
+                  if (!urlFinal.startsWith('http')) {
+                    const base = "http://localhost:8000";
+                    urlFinal = urlFinal.startsWith('/') ? `${base}${urlFinal}` : `${base}/${urlFinal}`;
+                  }
+                  window.open(urlFinal, '_blank');
+                }}
+                className="w-full bg-slate-900 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase shadow-xl hover:bg-indigo-600 transition-all flex items-center justify-center gap-2"
+              >
+                👁️ Ver Documento PDF
+              </button>
+            )}
+            <button onClick={() => setModalInfo(null)} className="w-full text-slate-300 font-black text-[10px] uppercase tracking-widest hover:text-slate-500 transition-colors">Cerrar Ventana</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  {/* Modal Redactar Reporte */ }
+  {
+    modalAviso && (
+      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+        <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="p-10 bg-indigo-600 text-white font-black uppercase italic text-2xl">Redactar Reporte</div>
+          <div className="p-10 space-y-6">
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Seleccionar Cliente</label>
+              <select className="w-full p-5 bg-slate-50 rounded-[1.5rem] border-none font-bold outline-none text-slate-700" onChange={(e) => setReporteData({ ...reporteData, empresa: e.target.value })}>
+                <option value="">Lista de empresas...</option>
+                {datosAgrupados.map((e, i) => <option key={i} value={e.nombre}>{e.nombre}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-2">Notas e Instrucciones</label>
+              <textarea rows="4" className="w-full p-5 bg-slate-50 rounded-[1.5rem] border-none font-bold outline-none text-slate-700 placeholder:italic" placeholder="Ej: Se requiere renovar el dictamen eléctrico..." onChange={(e) => setReporteData({ ...reporteData, notas: e.target.value })}></textarea>
+            </div>
+            <div className="flex gap-4 pt-4">
+              <button onClick={generarAvisoPDF} disabled={!reporteData.empresa || !reporteData.notas} className="flex-1 bg-indigo-600 text-white py-5 rounded-[1.5rem] font-black text-xs uppercase shadow-xl disabled:opacity-30 disabled:grayscale transition-all">Generar y Descargar PDF</button>
+              <button onClick={() => setModalAviso(false)} className="px-6 text-slate-300 font-black text-[10px] uppercase tracking-widest">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+    </div >
   );
 }
