@@ -102,4 +102,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'it.leconsultores@gmail.com'
 EMAIL_HOST_PASSWORD = 'mdqk talm tlwg mqpr'
 
+
 DEFAULT_AUTO_FIELD = EMAIL_HOST_USER
+
+ADMIN_EMAIL = 'it.leconsultores@gmail.com'

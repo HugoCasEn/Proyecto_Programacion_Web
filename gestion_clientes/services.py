@@ -3,7 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 from datetime import timedelta
 
-from .models import Documento
+from .models import Documento, TipoDocumento , Cliente
 
 def revisar_documentos_proximos():
 
@@ -22,18 +22,28 @@ def revisar_documentos_proximos():
 
         if cliente.email:
 
-            send_mail(
-                subject='Documento próximo a vencer',
-                message=(
-                    f'Hola {cliente.nombre},\n\n'
-                    f'Tu documento "{documento.tipo}" '
-                    f'vence el {documento.fecha_vencimiento}.'
-                ),
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=[cliente.email],
-                fail_silently=False,
+            if documento.fecha_vencimiento < hoy:
+                asunto = 'Documento vencido'
+                mensaje = (
+                f'Hola {Cliente.nombre},\n\n'
+                f'Tu documento "{TipoDocumento.nombre_tipo}" '
+                f'venció el {Documento.fecha_vencimiento}.'
             )
+        else:
+            asunto = 'Documento próximo a vencer'
+            mensaje = (
+            f'Hola {Cliente.nombre},\n\n'
+            f'Tu documento "{TipoDocumento.nombre_tipo}" '
+            f'vence el {Documento.fecha_vencimiento}.'
+        )
 
-            enviados += 1
+        send_mail(
+        subject=asunto,
+        message=mensaje,
+        from_email=settings.EMAIL_HOST_USER,
+        recipient_list=[cliente.email],
+        fail_silently=False,
+        ) 
+        enviados += 1
 
     return enviados
